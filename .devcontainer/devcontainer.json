@@ -20,7 +20,10 @@
 				"bierner.markdown-preview-github-styles"
 			]
 		}
-	}
+	},
+	"mounts": [
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/Documents/my-fire-secrets,target=/workspaces/fin-viz/import,type=bind,consistency=cached"
+	]
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
