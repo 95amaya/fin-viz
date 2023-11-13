@@ -17,11 +17,7 @@ class Col(Enum):
     TransactionType = "Transaction Type"
     AccountType = "Account"
     Description = "Description"
-    CustomTags = "Custom Tags"
-
-
-def toList(val: str):
-    return val.split(",")
+    Label = "Label"
 
 
 # @st.cache_data
@@ -29,8 +25,6 @@ def get_data_from_csv():
     df = pd.read_csv(DATA_FILE)
     df[Col.TransactionDate.value] = pd.to_datetime(
         df[Col.TransactionDate.value])
-    df[Col.CustomTags.value] = df.apply(lambda row: toList(str(
-        row[Col.CustomTags.value])), axis=1)
     return df
 
 # helpful commands
@@ -76,18 +70,7 @@ def get_month_name(month_num: int):
     return calendar.month_name[month_num]
 
 
-def get_df_grp(dfi: pd.DataFrame, filterByFunc, grpByFunc):
-    return dfi.loc[filterByFunc].groupby(grpByFunc)[Col.Amount.value]
-
-
-# print(df[Col.CustomTags.value].head())
-# print(df[Col.CustomTags.value].explode().head())
-# print(df[Col.CustomTags.value].explode() == 'NOISE')
-# print(df[Col.CustomTags.value].explode() != 'NOISE')
-
-# print(df[Col.TransactionDate.value] >= datetime(2023, 1, 1))
-
-viz_qry = (df[Col.CustomTags.value].explode() != 'NOISE')\
+viz_qry = (df[Col.Label.value] != 'NOISE')\
     & (df[Col.TransactionDate.value] >= datetime(2023, 1, 1))\
     & (df[Col.TransactionDate.value] < datetime(2023, 11, 1))\
     & (df[Col.TransactionType.value] == 'DEBIT')
@@ -99,7 +82,7 @@ with st.container():
         curr_month_income = vis_grp.loc[(df[Col.TransactionDate.value] > datetime(
             2023, 10, 1)) & (vis_grp[Col.Amount.value] > 0)]
         curr_month_income_fig = px.pie(curr_month_income, values=Col.Amount.value,
-                                       names=Col.Description.value, title="Current Month Income Breakdown")
+                                       names=Col.Label.value, title="Current Month Income Breakdown")
         st.plotly_chart(curr_month_income_fig)
 
     with right_column:
@@ -110,7 +93,7 @@ with st.container():
         curr_month_spend[Col.Amount.value] = curr_month_spend[Col.Amount.value].abs()
         # curr_month_spend
         curr_month_spend_fig = px.pie(curr_month_spend, values=Col.Amount.value,
-                                      names=Col.Description.value, title="Current Month Spend Breakdown")
+                                      names=Col.Label.value, title="Current Month Spend Breakdown")
         st.plotly_chart(curr_month_spend_fig)
 
 
