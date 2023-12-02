@@ -53,7 +53,7 @@ df = get_data_from_csv()
 
 debit_qry = (df[Col.Label.value] != 'NOISE')\
     & (df[Col.TransactionDate.value] >= datetime(2023, 1, 1))\
-    & (df[Col.TransactionDate.value] < datetime(2023, 11, 1))\
+    & (df[Col.TransactionDate.value] < datetime(2023, 12, 1))\
     & (df[Col.TransactionType.value] == 'DEBIT')
 debit_grp = df.loc[debit_qry]
 months = debit_grp[Col.TransactionDate.value].dt.month.unique()
@@ -80,14 +80,14 @@ income_per_month[3] = income_per_month_sum - \
 income_per_month[4] = income_per_month_sum
 
 
-ytd_sum = [
+income_ytd_sum = [
     'Y.T.D Sum'] + income_per_month.sum()[1:].explode().tolist()
 
-df_len = len(income_per_month)
+income_df_len = len(income_per_month)
 monthly_avg = ['Monthly Avg.'] + \
-    list(map(lambda val: val / df_len, ytd_sum[1:]))
+    list(map(lambda val: val / income_df_len, income_ytd_sum[1:]))
 
-income_per_month.loc[len(income_per_month.index)] = ytd_sum
+income_per_month.loc[len(income_per_month.index)] = income_ytd_sum
 
 income_per_month.loc[len(income_per_month.index)] = monthly_avg
 
@@ -99,6 +99,7 @@ income_per_month[4] = income_per_month[4].apply(format_currency)
 income_per_month.columns = [
     "Month", "Michael's Income", "Stephanie's Income", "Other", "Total"]
 # income_per_month
+st.header("Income")
 income_per_month.T
 
 ##################################
@@ -126,6 +127,17 @@ spend_per_month[3] = spend_per_month_sum - \
 
 spend_per_month[4] = spend_per_month_sum
 
+spend_ytd_sum = [
+    'Y.T.D Sum'] + spend_per_month.sum()[1:].explode().tolist()
+
+spend_df_len = len(spend_per_month)
+monthly_avg = ['Monthly Avg.'] + \
+    list(map(lambda val: val / spend_df_len, spend_ytd_sum[1:]))
+
+spend_per_month.loc[len(spend_per_month.index)] = spend_ytd_sum
+
+spend_per_month.loc[len(spend_per_month.index)] = monthly_avg
+
 spend_per_month[1] = spend_per_month[1].apply(format_currency)
 spend_per_month[2] = spend_per_month[2].apply(format_currency)
 spend_per_month[3] = spend_per_month[3].apply(format_currency)
@@ -134,4 +146,5 @@ spend_per_month[4] = spend_per_month[4].apply(format_currency)
 spend_per_month.columns = [
     "Month", "Mortgage Payment", "Need's Payment", "Other", "Total"]
 # spend_per_month
+st.header("Expenses")
 spend_per_month.T
