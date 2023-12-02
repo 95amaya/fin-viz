@@ -24,6 +24,14 @@ class Col(Enum):
     Label = "Label"
 
 
+class Label(Enum):
+    IncomeMichael = "Michael's Income"
+    IncomeStephanie = "Stephanie's Income"
+    ExpenseMortgage = "Mortgage Payment"
+    ExpenseNeeds = "Need's Payment"
+    ExpenseWants = "Want's Payment"
+
+
 # @st.cache_data
 def get_data_from_csv():
     df = pd.read_csv(DATA_FILE)
@@ -60,12 +68,12 @@ months = debit_grp[Col.TransactionDate.value].dt.month.unique()
 
 income_grp = debit_grp.loc[(df[Col.Amount.value] > 0)]
 income_per_month = pd.DataFrame(list(map(get_month_name, months)))
-income_per_month[1] = income_grp.loc[(df[Col.Label.value] == "Michael's Income")]\
+income_per_month[1] = income_grp.loc[(df[Col.Label.value] == Label.IncomeMichael.value)]\
     .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .sum()\
     .values
 
-income_per_month[2] = income_grp.loc[(df[Col.Label.value] == "Stephanie's Income")]\
+income_per_month[2] = income_grp.loc[(df[Col.Label.value] == Label.IncomeStephanie.value)]\
     .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .sum()\
     .values
@@ -97,7 +105,7 @@ income_per_month[3] = income_per_month[3].apply(format_currency)
 income_per_month[4] = income_per_month[4].apply(format_currency)
 
 income_per_month.columns = [
-    "Month", "Michael's Income", "Stephanie's Income", "Other", "Total"]
+    "Month", Label.IncomeMichael.value, Label.IncomeStephanie.value, "Other", "Total"]
 # income_per_month
 st.header("Income")
 income_per_month.T
@@ -108,12 +116,17 @@ income_per_month.T
 spend_grp = debit_grp.loc[(df[Col.Amount.value] < 0)]
 
 spend_per_month = pd.DataFrame(list(map(get_month_name, months)))
-spend_per_month[1] = debit_grp.loc[(df[Col.Label.value] == "Mortgage Payment")]\
+spend_per_month[1] = debit_grp.loc[(df[Col.Label.value] == Label.ExpenseMortgage.value)]\
     .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .apply(lambda val: val.abs().sum())\
     .values
 
-spend_per_month[2] = debit_grp.loc[(df[Col.Label.value] == "Need's Payment")]\
+spend_per_month[2] = debit_grp.loc[(df[Col.Label.value] == Label.ExpenseNeeds.value)]\
+    .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+    .apply(lambda val: val.abs().sum())\
+    .values
+
+spend_per_month[3] = debit_grp.loc[(df[Col.Label.value] == "Want's Payment")]\
     .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .apply(lambda val: val.abs().sum())\
     .values
@@ -122,10 +135,10 @@ spend_per_month_sum = spend_grp.groupby(spend_grp[Col.TransactionDate.value].dt.
     .apply(lambda val: val.abs().sum())\
     .values
 
-spend_per_month[3] = spend_per_month_sum - \
-    (spend_per_month[1] + spend_per_month[2])
+spend_per_month[4] = spend_per_month_sum - \
+    (spend_per_month[1] + spend_per_month[2] + spend_per_month[3])
 
-spend_per_month[4] = spend_per_month_sum
+spend_per_month[5] = spend_per_month_sum
 
 spend_ytd_sum = [
     'Y.T.D Sum'] + spend_per_month.sum()[1:].explode().tolist()
@@ -142,9 +155,10 @@ spend_per_month[1] = spend_per_month[1].apply(format_currency)
 spend_per_month[2] = spend_per_month[2].apply(format_currency)
 spend_per_month[3] = spend_per_month[3].apply(format_currency)
 spend_per_month[4] = spend_per_month[4].apply(format_currency)
+spend_per_month[5] = spend_per_month[5].apply(format_currency)
 
 spend_per_month.columns = [
-    "Month", "Mortgage Payment", "Need's Payment", "Other", "Total"]
+    "Month", Label.ExpenseMortgage.value, Label.ExpenseNeeds.value, Label.ExpenseWants.value, "Other", "Total"]
 # spend_per_month
 st.header("Expenses")
 spend_per_month.T
