@@ -61,7 +61,7 @@ df = get_data_from_csv()
 
 debit_qry = (df[Col.Label.value] != 'NOISE')\
     & (df[Col.TransactionDate.value] >= datetime(2023, 1, 1))\
-    & (df[Col.TransactionDate.value] < datetime(2023, 12, 1))\
+    & (df[Col.TransactionDate.value] < datetime(2024, 1, 1))\
     & (df[Col.TransactionType.value] == 'DEBIT')
 debit_grp = df.loc[debit_qry]
 months = debit_grp[Col.TransactionDate.value].dt.month.unique()
@@ -116,18 +116,18 @@ income_per_month.T
 spend_grp = debit_grp.loc[(df[Col.Amount.value] < 0)]
 
 spend_per_month = pd.DataFrame(list(map(get_month_name, months)))
-spend_per_month[1] = debit_grp.loc[(df[Col.Label.value] == Label.ExpenseMortgage.value)]\
-    .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+spend_per_month[1] = spend_grp.loc[(df[Col.Label.value] == Label.ExpenseMortgage.value)]\
+    .groupby(spend_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .apply(lambda val: val.abs().sum())\
     .values
 
-spend_per_month[2] = debit_grp.loc[(df[Col.Label.value] == Label.ExpenseNeeds.value)]\
-    .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+spend_per_month[2] = spend_grp.loc[(df[Col.AccountType.value] == 'NEEDS') & (df[Col.Label.value] != Label.ExpenseMortgage.value)]\
+    .groupby(spend_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .apply(lambda val: val.abs().sum())\
     .values
 
-spend_per_month[3] = debit_grp.loc[(df[Col.Label.value] == "Want's Payment")]\
-    .groupby(debit_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+spend_per_month[3] = spend_grp.loc[(df[Col.AccountType.value] == 'WANTS')]\
+    .groupby(spend_grp[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
     .apply(lambda val: val.abs().sum())\
     .values
 
