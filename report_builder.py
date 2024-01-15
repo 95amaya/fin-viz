@@ -20,7 +20,10 @@ def get_month_name(month_num: int):
 
 
 def format_currency(val: any):
-    return "${:,.2f}".format(val)
+    if type(val) == int or type(val) == float:
+        return "${:,.2f}".format(val)
+    else:
+        return val
 
 # ----------------------------------------
 
@@ -68,14 +71,8 @@ class ReportBuilder:
         monthly_avg = ['Monthly Avg.'] + \
             list(map(lambda val: val / income_df_len, income_ytd_sum[1:]))
 
-        income_per_month.loc[len(income_per_month.index)] = income_ytd_sum
-
         income_per_month.loc[len(income_per_month.index)] = monthly_avg
-
-        income_per_month[1] = income_per_month[1].apply(format_currency)
-        income_per_month[2] = income_per_month[2].apply(format_currency)
-        income_per_month[3] = income_per_month[3].apply(format_currency)
-        income_per_month[4] = income_per_month[4].apply(format_currency)
+        income_per_month.loc[len(income_per_month.index)] = income_ytd_sum
 
         income_per_month.columns = [
             "Month", Label.IncomeMichael.value, Label.IncomeStephanie.value, "Other", "Total"]
@@ -118,15 +115,8 @@ class ReportBuilder:
         monthly_avg = ['Monthly Avg.'] + \
             list(map(lambda val: val / spend_df_len, spend_ytd_sum[1:]))
 
-        spend_per_month.loc[len(spend_per_month.index)] = spend_ytd_sum
-
         spend_per_month.loc[len(spend_per_month.index)] = monthly_avg
-
-        spend_per_month[1] = spend_per_month[1].apply(format_currency)
-        spend_per_month[2] = spend_per_month[2].apply(format_currency)
-        spend_per_month[3] = spend_per_month[3].apply(format_currency)
-        spend_per_month[4] = spend_per_month[4].apply(format_currency)
-        spend_per_month[5] = spend_per_month[5].apply(format_currency)
+        spend_per_month.loc[len(spend_per_month.index)] = spend_ytd_sum
 
         spend_per_month.columns = [
             "Month", Label.ExpenseMortgage.value, Label.ExpenseNeeds.value, Label.ExpenseWants.value, "Other", "Total"]
