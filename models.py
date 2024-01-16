@@ -16,3 +16,5 @@ class Label(Enum):
     ExpenseMortgage = "Mortgage Payment"
     ExpenseNeeds = "Need's Payment"
     ExpenseWants = "Want's Payment"
+    ExpenseUtility = "Utility Payment"
+    ExpenseSubscription = "Subscription Payment"
