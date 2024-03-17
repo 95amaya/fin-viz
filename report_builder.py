@@ -48,12 +48,13 @@ def format_breakdown_pct(total_series: pd.Series, part_series: pd.Series) -> pd.
 
 class ReportBuilder:
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, yyyy: int) -> None:
         self.main_df = get_data_from_csv(file_path)
-        debit_qry = (self.main_df[Col.Label.value] != 'NOISE')\
-            & (self.main_df[Col.TransactionDate.value] >= datetime(2023, 1, 1))\
-            & (self.main_df[Col.TransactionDate.value] < datetime(2024, 1, 1))\
-            & (self.main_df[Col.TransactionType.value] == 'DEBIT')
+        normalize_qry = (self.main_df[Col.Label.value] != 'NOISE')\
+            & (self.main_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
+            & (self.main_df[Col.TransactionDate.value] < datetime(yyyy + 1, 1, 1))
+        debit_qry = (self.main_df[Col.TransactionType.value] == 'DEBIT')
+        self.main_df = self.main_df.loc[normalize_qry]
         self.debit_df = self.main_df.loc[debit_qry]
         self.months = self.main_df[Col.TransactionDate.value].dt.month.unique()
         self.months_as_df = pd.DataFrame(
@@ -154,10 +155,12 @@ class ReportBuilder:
             .groupby(self.main_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values
-        
-        fixed_cost_per_month[3] = fixed_cost_per_month[1] + fixed_cost_per_month[2]
-        
-        fixed_cost_per_month.columns = ["Month", Label.ExpenseUtility.value, Label.ExpenseSubscription.value, "Total"]
-        
+
+        fixed_cost_per_month[3] = fixed_cost_per_month[1] + \
+            fixed_cost_per_month[2]
+
+        fixed_cost_per_month.columns = [
+            "Month", Label.ExpenseUtility.value, Label.ExpenseSubscription.value, "Total"]
+
         self.fixed_cost_summary_df = fixed_cost_per_month
         return fixed_cost_per_month

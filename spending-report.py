@@ -10,7 +10,7 @@ DATA_FILE_PATH = config('DATA_FILE_PATH')
 st.set_page_config(page_title="Finance Dashboard",
                    layout="wide")
 
-report = ReportBuilder(DATA_FILE_PATH)
+report = ReportBuilder(DATA_FILE_PATH, 2024)
 
 income_summary_df = report.build_income_summary_df()
 expense_summary_df = report.build_expense_summary_df()
@@ -62,6 +62,6 @@ breakdown_df["Income Total"] = breakdown_df["Income Total"].map(
 
 breakdown_df.T
 
-st.header('Fixed Cost Summary')
-fixed_cost_summary_df = report.build_fixed_cost_summary_df().map(format_currency)
-fixed_cost_summary_df.T
+# st.header('Fixed Cost Summary')
+# fixed_cost_summary_df = report.build_fixed_cost_summary_df().map(format_currency)
+# fixed_cost_summary_df.T
