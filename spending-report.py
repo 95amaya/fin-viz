@@ -15,17 +15,17 @@ report = ReportBuilder(DATA_FILE_PATH, 2024)
 income_summary_df = report.build_income_summary_df()
 expense_summary_df = report.build_expense_summary_df()
 
-st.header('Income and Expense Chart')
-summary_chart_df = income_summary_df[["Month", "Total"]][:-1].copy()
-summary_chart_df[2] = expense_summary_df[["Total"]][:-1].copy()
-summary_chart_df.columns = ["Month", "Income", "Expense"]
+# st.header('Income and Expense Chart')
+# summary_chart_df = income_summary_df[["Month", "Total"]][:-1].copy()
+# summary_chart_df[2] = expense_summary_df[["Total"]][:-1].copy()
+# summary_chart_df.columns = ["Month", "Income", "Expense"]
 
-fig = px.bar(summary_chart_df, x="Month",
-             y=["Income", "Expense"], barmode="group", color_discrete_map={
-                 'Income': '#50C878',
-                 'Expense': '#f94449'
-             })
-st.plotly_chart(fig, use_container_width=True)
+# fig = px.bar(summary_chart_df, x="Month",
+#              y=["Income", "Expense"], barmode="group", color_discrete_map={
+#                  'Income': '#50C878',
+#                  'Expense': '#f94449'
+#              })
+# st.plotly_chart(fig, use_container_width=True)
 
 # summary_chart_df_display = summary_chart_df.T.copy().map(format_currency)
 # summary_chart_df_display
