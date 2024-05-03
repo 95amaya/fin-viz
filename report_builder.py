@@ -2,6 +2,7 @@ from datetime import datetime
 from models import Col, Label
 import calendar
 import pandas as pd
+from rapidfuzz import fuzz
 
 
 # ------- Helper Functions -------
@@ -50,6 +51,7 @@ class ReportBuilder:
 
     def __init__(self, file_path: str, yyyy: int) -> None:
         self.main_df = get_data_from_csv(file_path)
+        self.year = yyyy
         normalize_qry = (self.main_df[Col.Label.value] != 'NOISE')\
             & (self.main_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
             & (self.main_df[Col.TransactionDate.value] < datetime(yyyy + 1, 1, 1))
@@ -164,3 +166,47 @@ class ReportBuilder:
 
         self.fixed_cost_summary_df = fixed_cost_per_month
         return fixed_cost_per_month
+
+    def calculate_fuzz_ratio(self, month_index: int) -> pd.DataFrame:
+        df = self.main_df
+
+        # Get months to compare
+        df_curr_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
+            df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1))].copy()
+
+        df_distinct_text_labels = self.get_distinct_labels(
+            month_index=month_index-1)
+
+        test = df_curr_month.head()[Col.Description.value].apply(
+            lambda descr: self.get_fuzz_ratio(descr, df_distinct_text_labels))
+
+        print(test.values)
+
+        return pd.DataFrame()
+
+    def get_distinct_labels(self, month_index: int) -> pd.DataFrame:
+        df = self.main_df
+
+        df_prev_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
+            df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1)) & (df[Col.Label.value])].copy()
+
+        df_distinct_text_labels = df_prev_month.drop_duplicates(subset=[Col.Label.value])[
+            [Col.Label.value, Col.Description.value]].to_dict('records')
+
+        # print(df_distinct_text_labels)
+        return df_distinct_text_labels
+
+    def get_fuzz_ratio(self, text, df_distinct_text_labels):
+        # print(text)
+        fuzz_ratio_obj = {Col.Label.value: '',
+                          'MaxFuzzRatio': 0}
+
+        for row in df_distinct_text_labels:
+            fuzz_ratio = fuzz.ratio(text, row[Col.Description.value])
+            row['FuzzRatio'] = fuzz_ratio
+            # print(row)
+            if (fuzz_ratio > fuzz_ratio_obj['MaxFuzzRatio']):
+                fuzz_ratio_obj = {Col.Label.value: row[Col.Label.value],
+                                  'MaxFuzzRatio': fuzz_ratio}
+        # print(fuzz_ratio_obj)
+        return fuzz_ratio_obj
