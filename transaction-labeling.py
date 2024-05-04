@@ -7,4 +7,4 @@ report = ReportBuilder(DATA_FILE_PATH, 2024)
 
 month_index = 3  # april
 # print(report)
-df_fuzz_ratio = report.calculate_fuzz_ratio(month_index)
+df_calculated_fuzzy_match = report.calculate_fuzzy_match(month_index)

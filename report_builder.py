@@ -167,36 +167,42 @@ class ReportBuilder:
         self.fixed_cost_summary_df = fixed_cost_per_month
         return fixed_cost_per_month
 
-    def calculate_fuzz_ratio(self, month_index: int) -> pd.DataFrame:
+    def calculate_fuzzy_match(self, month_index: int) -> pd.DataFrame:
+        col_fuzzy_match = 'fuzzy_match'
+        df_distinct_text_labels = self.__get_distinct_labels(
+            month_index=month_index-1)
         df = self.main_df
 
         # Get months to compare
         df_curr_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
             df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1))].copy()
 
-        df_distinct_text_labels = self.get_distinct_labels(
-            month_index=month_index-1)
+        df_curr_month[col_fuzzy_match] = df_curr_month[Col.Description.value].apply(
+            lambda descr: self.__get_closest_fuzzy_match(descr, df_distinct_text_labels))
 
-        test = df_curr_month.head()[Col.Description.value].apply(
-            lambda descr: self.get_fuzz_ratio(descr, df_distinct_text_labels))
+        df_curr_month[Col.Label.value] = df_curr_month[col_fuzzy_match].map(
+            lambda val: val[Col.Label.value] if val['MaxFuzzRatio'] >= 75 else '')
 
-        print(test.values)
+        # override temp in place
+        # df_curr_month = df_curr_month_fuzzy_match_temp.drop(
+        #     columns=[col_fuzzy_match])
 
-        return pd.DataFrame()
+        # print(df_curr_month)
+        return df_curr_month
 
-    def get_distinct_labels(self, month_index: int) -> pd.DataFrame:
+    def __get_distinct_labels(self, month_index: int) -> pd.DataFrame:
         df = self.main_df
 
-        df_prev_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
+        df_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
             df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1)) & (df[Col.Label.value])].copy()
 
-        df_distinct_text_labels = df_prev_month.drop_duplicates(subset=[Col.Label.value])[
+        df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.Label.value])[
             [Col.Label.value, Col.Description.value]].to_dict('records')
 
         # print(df_distinct_text_labels)
         return df_distinct_text_labels
 
-    def get_fuzz_ratio(self, text, df_distinct_text_labels):
+    def __get_closest_fuzzy_match(self, text, df_distinct_text_labels):
         # print(text)
         fuzz_ratio_obj = {Col.Label.value: '',
                           'MaxFuzzRatio': 0}
@@ -208,5 +214,6 @@ class ReportBuilder:
             if (fuzz_ratio > fuzz_ratio_obj['MaxFuzzRatio']):
                 fuzz_ratio_obj = {Col.Label.value: row[Col.Label.value],
                                   'MaxFuzzRatio': fuzz_ratio}
+
         # print(fuzz_ratio_obj)
         return fuzz_ratio_obj
