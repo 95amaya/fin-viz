@@ -10,7 +10,7 @@ DATA_FILE_PATH = config('DATA_FILE_PATH')
 st.set_page_config(page_title="Finance Dashboard",
                    layout="wide")
 
-report = ReportBuilder(DATA_FILE_PATH, 2024)
+report = ReportBuilder(DATA_FILE_PATH, 2024, 4)
 
 income_summary_df = report.build_income_summary_df()
 expense_summary_df = report.build_expense_summary_df()
@@ -32,8 +32,8 @@ expense_summary_df = report.build_expense_summary_df()
 
 # st.header("Income")
 # income_summary_df.T
-st.header("Monthly Breakdown")
-# .drop("Total", axis=1)  # returns copy
+st.header("Monthly Summary")
+# TODO: Put this inside report builder
 breakdown_df = expense_summary_df.copy()
 breakdown_df = breakdown_df.rename(columns={"Total": "Payment Total"})
 
@@ -62,6 +62,25 @@ breakdown_df["Income Total"] = breakdown_df["Income Total"].map(
 
 breakdown_df.T
 
-# st.header('Fixed Cost Summary')
-# fixed_cost_summary_df = report.build_fixed_cost_summary_df().map(format_currency)
-# fixed_cost_summary_df.T
+# Monthly Breakdown
+# TODO: Make Dynamic for any month
+st.header("Monthly Breakdown")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    with st.expander("Income"):
+        st.write('''
+            Test Income
+        ''')
+
+    with st.expander("Savings"):
+        st.write('''
+            Test Savings
+        ''')
+
+with col2:
+    with st.expander("Expenses"):
+        st.write('''
+            Test Expenses
+        ''')

@@ -49,12 +49,12 @@ def format_breakdown_pct(total_series: pd.Series, part_series: pd.Series) -> pd.
 
 class ReportBuilder:
 
-    def __init__(self, file_path: str, yyyy: int) -> None:
+    def __init__(self, file_path: str, yyyy: int, max_month: int) -> None:
         self.main_df = get_data_from_csv(file_path)
         self.year = yyyy
         normalize_qry = (self.main_df[Col.Label.value] != 'NOISE')\
             & (self.main_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
-            & (self.main_df[Col.TransactionDate.value] < datetime(yyyy + 1, 1, 1))
+            & (self.main_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
         debit_qry = (self.main_df[Col.TransactionType.value] == 'DEBIT')
         self.main_df = self.main_df.loc[normalize_qry]
         self.debit_df = self.main_df.loc[debit_qry]
@@ -66,6 +66,7 @@ class ReportBuilder:
         income_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] > 0)]
         income_per_month = self.months_as_df.copy()
 
+        # TODO: Will need to duplicate for monthly breakdown
         income_per_month[1] = income_df.loc[(income_df[Col.Label.value] == Label.IncomeMichael.value)]\
             .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .sum()\
@@ -145,27 +146,9 @@ class ReportBuilder:
         self.expense_summary_df = spend_per_month
         return spend_per_month
 
-    def build_fixed_cost_summary_df(self) -> pd.DataFrame:
-        fixed_cost_per_month = self.months_as_df.copy()
-
-        fixed_cost_per_month[1] = self.main_df.loc[(self.main_df[Col.Label.value] == Label.ExpenseUtility.value)]\
-            .groupby(self.main_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
-            .apply(lambda val: val.abs().sum())\
-            .values
-
-        fixed_cost_per_month[2] = self.main_df.loc[(self.main_df[Col.Label.value] == Label.ExpenseSubscription.value)]\
-            .groupby(self.main_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
-            .apply(lambda val: val.abs().sum())\
-            .values
-
-        fixed_cost_per_month[3] = fixed_cost_per_month[1] + \
-            fixed_cost_per_month[2]
-
-        fixed_cost_per_month.columns = [
-            "Month", Label.ExpenseUtility.value, Label.ExpenseSubscription.value, "Total"]
-
-        self.fixed_cost_summary_df = fixed_cost_per_month
-        return fixed_cost_per_month
+    def build_savings_summary_df(self) -> pd.DataFrame:
+        # TODO: How is savings categorized?
+        return pd.DataFrame()
 
     def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
@@ -195,6 +178,7 @@ class ReportBuilder:
         df_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
             df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1)) & (df[Col.Label.value])].copy()
 
+        # TODO: Update to account for Needs vs. Wants Credit Card Payment
         df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.Label.value])[
             [Col.Label.value, Col.Description.value]].to_dict('records')
 
