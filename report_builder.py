@@ -167,7 +167,7 @@ class ReportBuilder:
         self.fixed_cost_summary_df = fixed_cost_per_month
         return fixed_cost_per_month
 
-    def calculate_fuzzy_match(self, month_index: int) -> pd.DataFrame:
+    def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
         df_distinct_text_labels = self.__get_distinct_labels(
             month_index=month_index-1)
@@ -183,9 +183,8 @@ class ReportBuilder:
         df_curr_month[Col.Label.value] = df_curr_month[col_fuzzy_match].map(
             lambda val: val[Col.Label.value] if val['MaxFuzzRatio'] >= 75 else '')
 
-        # override temp in place
-        # df_curr_month = df_curr_month_fuzzy_match_temp.drop(
-        #     columns=[col_fuzzy_match])
+        df_curr_month = df_curr_month.loc[df_curr_month[Col.Label.value] != ''].drop(
+            columns=[col_fuzzy_match])
 
         # print(df_curr_month)
         return df_curr_month
