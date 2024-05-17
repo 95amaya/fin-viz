@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Hashable
 
-from numpy import ndarray
+import numpy as np
 from models import Col, Label
 import calendar
 import pandas as pd
@@ -55,8 +55,7 @@ class ReportBuilder:
     income_per_month_df: pd.DataFrame
     main_df: pd.DataFrame
     monthly_report_df: pd.DataFrame
-    months_as_df: pd.DataFrame
-    months: ndarray[Any, Any]
+    months: np.ndarray[Any, Any]
     spend_per_month_df: pd.DataFrame
     year: int
 
@@ -70,63 +69,59 @@ class ReportBuilder:
         self.main_df = self.main_df.loc[normalize_qry]
         self.debit_df = self.main_df.loc[debit_qry]
         self.months = self.main_df[Col.TransactionDate.value].dt.month.unique()
-        self.months_as_df = pd.DataFrame(
-            list(map(get_month_name, self.months)))
+        self.months_as_labels = list(map(get_month_name, self.months))
 
-    def __build_monthly_income_summary_df(self) -> pd.DataFrame:
+    def build_monthly_income_summary_df(self) -> pd.DataFrame:
         income_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] > 0)]
-        income_per_month = self.months_as_df.copy()
-
-        income_per_month[1] = income_df.loc[(income_df[Col.Label.value] == Label.IncomeMichael.value)]\
-            .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
-            .sum()\
-            .values
-
-        income_per_month[2] = income_df.loc[(income_df[Col.Label.value] == Label.IncomeStephanie.value)]\
-            .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
-            .sum()\
-            .values
 
         income_per_month_sum = income_df.groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .sum()\
             .values
 
-        income_per_month[3] = income_per_month_sum - \
-            (income_per_month[1] + income_per_month[2])
+        income_per_month_1 = income_df.loc[(income_df[Col.Label.value] == Label.IncomeMichael.value)]\
+            .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+            .sum()\
+            .values
 
-        income_per_month[4] = income_per_month_sum
+        income_per_month_2 = income_df.loc[(income_df[Col.Label.value] == Label.IncomeStephanie.value)]\
+            .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+            .sum()\
+            .values
 
-        income_ytd_sum = [
-            'Y.T.D Sum'] + income_per_month.sum()[1:].explode().tolist()
+        income_per_month_3 = income_per_month_sum - \
+            (income_per_month_1 + income_per_month_2)  # type: ignore
 
-        income_df_len = len(income_per_month)
-        monthly_avg = ['Monthly Avg.'] + \
-            list(map(lambda val: val / income_df_len, income_ytd_sum[1:]))
+        retval = pd.DataFrame(
+            data={
+                "Month": self.months_as_labels,
+                Label.IncomeMichael.value: income_per_month_1,
+                Label.IncomeStephanie.value: income_per_month_2,
+                "Other": income_per_month_3,
+                "Total": income_per_month_sum,
+            }
+        )
 
-        income_per_month.loc[len(income_per_month.index)] = monthly_avg
-        income_per_month.loc[len(income_per_month.index)] = income_ytd_sum
+        self.__add_calculated_rows(retval)
+        # print(retval)
 
-        income_per_month.columns = [
-            "Month", Label.IncomeMichael.value, Label.IncomeStephanie.value, "Other", "Total"]  # type: ignore
+        self.income_per_month_df = retval
 
-        self.income_per_month_df = income_per_month
-        return income_per_month
+        return self.income_per_month_df
 
-    def __build_monthly_expense_summary_df(self) -> pd.DataFrame:
+    def build_monthly_expense_summary_df(self) -> pd.DataFrame:
         spend_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] < 0)]
-        spend_per_month = self.months_as_df.copy()
 
-        spend_per_month[1] = spend_df.loc[(spend_df[Col.Label.value] == Label.ExpenseMortgage.value)]\
+        spend_per_month_1 = spend_df.loc[(spend_df[Col.Label.value] == Label.ExpenseMortgage.value)]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values
 
-        spend_per_month[2] = spend_df.loc[(spend_df[Col.AccountType.value] == 'NEEDS') & (spend_df[Col.Label.value] != Label.ExpenseMortgage.value)]\
+        spend_per_month_2 = spend_df.loc[(spend_df[Col.AccountType.value] == 'NEEDS') & (spend_df[Col.Label.value] != Label.ExpenseMortgage.value)]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values
 
-        spend_per_month[3] = spend_df.loc[(spend_df[Col.AccountType.value] == 'WANTS')]\
+        spend_per_month_3 = spend_df.loc[(spend_df[Col.AccountType.value] == 'WANTS')]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values
@@ -135,62 +130,55 @@ class ReportBuilder:
             .apply(lambda val: val.abs().sum())\
             .values
 
-        # spend_per_month[4] = spend_per_month_sum - \
-        #     (spend_per_month[1] + spend_per_month[2] + spend_per_month[3])
+        retval = pd.DataFrame(
+            data={
+                "Month": self.months_as_labels,
+                Label.ExpenseMortgage.value: spend_per_month_1,
+                Label.ExpenseNeeds.value: spend_per_month_2,
+                Label.ExpenseWants.value: spend_per_month_3,
+                "Total": spend_per_month_sum,
+            }
+        )
 
-        spend_per_month[4] = spend_per_month_sum
+        self.__add_calculated_rows(retval)
+        # print(retval)
 
-        spend_ytd_sum = [
-            'Y.T.D Sum'] + spend_per_month.sum()[1:].explode().tolist()
+        self.spend_per_month_df = retval
 
-        spend_df_len = len(spend_per_month)
+        return self.spend_per_month_df
+
+    def __add_calculated_rows(self, df: pd.DataFrame) -> None:
+        # sum each column in dataframe and convert format to dataframe row
+        ytd_sum = [
+            'Y.T.D Sum'] + df.sum()[1:].explode().tolist()
+
+        df_len = len(df)
         monthly_avg = ['Monthly Avg.'] + \
-            list(map(lambda val: val / spend_df_len, spend_ytd_sum[1:]))
+            list(map(lambda val: val / df_len, ytd_sum[1:]))
 
-        spend_per_month.loc[len(spend_per_month.index)] = monthly_avg
-        spend_per_month.loc[len(spend_per_month.index)] = spend_ytd_sum
-
-        spend_per_month.columns = [
-            "Month", Label.ExpenseMortgage.value, Label.ExpenseNeeds.value, Label.ExpenseWants.value, "Total"]  # type: ignore
-
-        self.spend_per_month_df = spend_per_month
-        return spend_per_month
+        df.loc[len(df.index)] = monthly_avg
+        df.loc[len(df.index)] = ytd_sum
 
     def build_monthly_income_and_expense_df(self) -> pd.DataFrame:
-        income_summary_df = self.__build_monthly_income_summary_df()
-        expense_summary_df = self.__build_monthly_expense_summary_df()
+        income_summary_df = self.build_monthly_income_summary_df()
+        expense_summary_df = self.build_monthly_expense_summary_df()
 
-        monthly_report_df = expense_summary_df.copy()
-        monthly_report_df = monthly_report_df.rename(
-            columns={"Total": "Payment Total"})
+        total_income = income_summary_df["Total"]
+        retval = pd.DataFrame(
+            data={
+                "Month": income_summary_df.iloc[:, 0],
+                "Income Total": total_income.map(format_currency),
+                Label.ExpenseMortgage.value: format_breakdown_pct(total_income, expense_summary_df[Label.ExpenseMortgage.value]),
+                Label.ExpenseNeeds.value: format_breakdown_pct(total_income, expense_summary_df[Label.ExpenseNeeds.value]),
+                Label.ExpenseWants.value: format_breakdown_pct(total_income, expense_summary_df[Label.ExpenseWants.value]),
+                "Payment Total": format_breakdown_pct(total_income, expense_summary_df["Total"]),
+                "Savings": format_breakdown_pct(total_income, total_income - expense_summary_df["Total"])
+            }
+        )
+        # print(retval)
 
-        monthly_report_df.insert(1, "Income Total",
-                                 income_summary_df[["Total"]].copy())  # type: ignore
-
-        monthly_report_df["Savings"] = monthly_report_df["Income Total"] - \
-            monthly_report_df["Payment Total"]
-        monthly_report_df = monthly_report_df[:-1]
-
-        monthly_report_df[Label.ExpenseMortgage.value] = format_breakdown_pct(
-            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseMortgage.value])
-
-        monthly_report_df[Label.ExpenseNeeds.value] = format_breakdown_pct(
-            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseNeeds.value])
-
-        monthly_report_df[Label.ExpenseWants.value] = format_breakdown_pct(
-            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseWants.value])
-
-        monthly_report_df["Payment Total"] = format_breakdown_pct(
-            monthly_report_df["Income Total"], monthly_report_df["Payment Total"])
-
-        monthly_report_df["Savings"] = format_breakdown_pct(
-            monthly_report_df["Income Total"], monthly_report_df["Savings"])
-
-        monthly_report_df["Income Total"] = monthly_report_df["Income Total"].map(
-            format_currency)
-
-        self.monthly_report_df = monthly_report_df
-        return monthly_report_df
+        self.monthly_report_df = retval
+        return self.monthly_report_df
 
     def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
