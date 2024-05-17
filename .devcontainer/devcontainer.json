@@ -10,13 +10,14 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"bierner.markdown-preview-github-styles",
 				"dbaeumer.vscode-eslint",
-				"ms-python.vscode-pylance",
-				"ms-python.python",
-				"ms-python.autopep8",
 				"mechatroner.rainbow-csv",
-				"ms-toolsai.jupyter",
-				"bierner.markdown-preview-github-styles"
+				"ms-python.autopep8",
+				"ms-python.mypy-type-checker",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter"
 			]
 		}
 	},

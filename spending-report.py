@@ -1,10 +1,12 @@
 # import plotly.express as px
 import streamlit as st
-from decouple import config
-from report_builder import *
+from environs import Env
+from report_builder import ReportBuilder
 
 
-DATA_FILE_PATH = config('DATA_FILE_PATH')
+env = Env()
+env.read_env()
+DATA_FILE_PATH: str = env.str('DATA_FILE_PATH')
 
 # ----- Main Application ---------
 st.set_page_config(page_title="Finance Dashboard",

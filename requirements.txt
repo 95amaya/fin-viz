@@ -1,9 +1,8 @@
-streamlit==1.27.2
+environs==11.0.0
 ipykernel==6.25.2
-plotly-express==0.4.1
-notebook==7.0.6
 ipywidgets==8.1.1
-python-decouple==3.8
-
-
-
+notebook==7.0.6
+plotly-express==0.4.1
+pandas-stubs==2.2.1.240316
+rapidfuzz==3.8.1
+streamlit==1.27.2
