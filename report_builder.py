@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import Any, Hashable
+
+from numpy import ndarray
 from models import Col, Label
 import calendar
 import pandas as pd
@@ -20,14 +23,14 @@ def get_month_name(month_num: int) -> str:
     return calendar.month_name[month_num]
 
 
-def format_currency(val: any):
+def format_currency(val: Any):
     if type(val) == int or type(val) == float:
         return "${:,.2f}".format(val)
     else:
         return val
 
 
-def format_percentage(val: any):
+def format_percentage(val: Any):
     if type(val) == float and abs(val) <= 2:
         return "{:.1%}".format(val)
     else:
@@ -48,6 +51,14 @@ def format_breakdown_pct(total_series: pd.Series, part_series: pd.Series) -> pd.
 
 
 class ReportBuilder:
+    debit_df: pd.DataFrame
+    income_per_month_df: pd.DataFrame
+    main_df: pd.DataFrame
+    monthly_report_df: pd.DataFrame
+    months_as_df: pd.DataFrame
+    months: ndarray[Any, Any]
+    spend_per_month_df: pd.DataFrame
+    year: int
 
     def __init__(self, file_path: str, yyyy: int, max_month: int) -> None:
         self.main_df = get_data_from_csv(file_path)
@@ -62,11 +73,10 @@ class ReportBuilder:
         self.months_as_df = pd.DataFrame(
             list(map(get_month_name, self.months)))
 
-    def build_income_summary_df(self) -> pd.DataFrame:
+    def __build_monthly_income_summary_df(self) -> pd.DataFrame:
         income_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] > 0)]
         income_per_month = self.months_as_df.copy()
 
-        # TODO: Will need to duplicate for monthly breakdown
         income_per_month[1] = income_df.loc[(income_df[Col.Label.value] == Label.IncomeMichael.value)]\
             .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .sum()\
@@ -97,12 +107,12 @@ class ReportBuilder:
         income_per_month.loc[len(income_per_month.index)] = income_ytd_sum
 
         income_per_month.columns = [
-            "Month", Label.IncomeMichael.value, Label.IncomeStephanie.value, "Other", "Total"]
+            "Month", Label.IncomeMichael.value, Label.IncomeStephanie.value, "Other", "Total"]  # type: ignore
 
-        self.income_summary_df = income_per_month
+        self.income_per_month_df = income_per_month
         return income_per_month
 
-    def build_expense_summary_df(self) -> pd.DataFrame:
+    def __build_monthly_expense_summary_df(self) -> pd.DataFrame:
         spend_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] < 0)]
         spend_per_month = self.months_as_df.copy()
 
@@ -141,14 +151,46 @@ class ReportBuilder:
         spend_per_month.loc[len(spend_per_month.index)] = spend_ytd_sum
 
         spend_per_month.columns = [
-            "Month", Label.ExpenseMortgage.value, Label.ExpenseNeeds.value, Label.ExpenseWants.value, "Total"]
+            "Month", Label.ExpenseMortgage.value, Label.ExpenseNeeds.value, Label.ExpenseWants.value, "Total"]  # type: ignore
 
-        self.expense_summary_df = spend_per_month
+        self.spend_per_month_df = spend_per_month
         return spend_per_month
 
-    def build_savings_summary_df(self) -> pd.DataFrame:
-        # TODO: How is savings categorized?
-        return pd.DataFrame()
+    def build_monthly_income_and_expense_df(self) -> pd.DataFrame:
+        income_summary_df = self.__build_monthly_income_summary_df()
+        expense_summary_df = self.__build_monthly_expense_summary_df()
+
+        monthly_report_df = expense_summary_df.copy()
+        monthly_report_df = monthly_report_df.rename(
+            columns={"Total": "Payment Total"})
+
+        monthly_report_df.insert(1, "Income Total",
+                                 income_summary_df[["Total"]].copy())  # type: ignore
+
+        monthly_report_df["Savings"] = monthly_report_df["Income Total"] - \
+            monthly_report_df["Payment Total"]
+        monthly_report_df = monthly_report_df[:-1]
+
+        monthly_report_df[Label.ExpenseMortgage.value] = format_breakdown_pct(
+            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseMortgage.value])
+
+        monthly_report_df[Label.ExpenseNeeds.value] = format_breakdown_pct(
+            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseNeeds.value])
+
+        monthly_report_df[Label.ExpenseWants.value] = format_breakdown_pct(
+            monthly_report_df["Income Total"], monthly_report_df[Label.ExpenseWants.value])
+
+        monthly_report_df["Payment Total"] = format_breakdown_pct(
+            monthly_report_df["Income Total"], monthly_report_df["Payment Total"])
+
+        monthly_report_df["Savings"] = format_breakdown_pct(
+            monthly_report_df["Income Total"], monthly_report_df["Savings"])
+
+        monthly_report_df["Income Total"] = monthly_report_df["Income Total"].map(
+            format_currency)
+
+        self.monthly_report_df = monthly_report_df
+        return monthly_report_df
 
     def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
@@ -172,7 +214,7 @@ class ReportBuilder:
         # print(df_curr_month)
         return df_curr_month
 
-    def __get_distinct_labels(self, month_index: int) -> pd.DataFrame:
+    def __get_distinct_labels(self, month_index: int) -> list[dict[Hashable, Any]]:
         df = self.main_df
 
         df_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
