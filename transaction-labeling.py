@@ -1,20 +1,14 @@
-from environs import Env
 from report_builder import ReportBuilder, Col
+from models import EnvironmentReader
 
 
 def truncate(val: str) -> str:
     return val.strip()
 
 
-def main() -> None:
-    env = Env()
-    env.read_env()
-    DATA_FILE_PATH: str = env.str('DATA_FILE_PATH')
-
-    month_index = 5
-
-    report = ReportBuilder(DATA_FILE_PATH, 2024, month_index)
-    df_fuzzy_match = report.get_fuzzy_matched_rows(month_index)
+def main(env: EnvironmentReader) -> None:
+    report = ReportBuilder(env.DATA_FILE_PATH, env.CURRENT_YYYY, env.MAX_MONTH)
+    df_fuzzy_match = report.get_fuzzy_matched_rows(env.MAX_MONTH)
 
     formatters = {
         Col.TransactionDate.value: "{0:%Y-%m-%d},|&".format,
@@ -42,7 +36,7 @@ def main() -> None:
 
     # read csv file into list array to alter specific rows that were changed
     read_rows: list[str] = []
-    with open(DATA_FILE_PATH, 'r') as file:
+    with open(env.DATA_FILE_PATH, 'r') as file:
         read_rows = read_rows + file.readlines()
 
     # alter specific rows
@@ -71,4 +65,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(EnvironmentReader())

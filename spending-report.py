@@ -1,19 +1,15 @@
 # import plotly.express as px
 import streamlit as st
-from environs import Env
 from report_builder import ReportBuilder
+from models import EnvironmentReader
 
 
-def main() -> None:
-    env = Env()
-    env.read_env()
-    DATA_FILE_PATH: str = env.str('DATA_FILE_PATH')
-
+def main(env: EnvironmentReader) -> None:
     # ----- Main Application ---------
     st.set_page_config(page_title="Finance Dashboard",
                        layout="wide")
 
-    report = ReportBuilder(DATA_FILE_PATH, 2024, 5)
+    report = ReportBuilder(env.DATA_FILE_PATH, env.CURRENT_YYYY, env.MAX_MONTH)
 
     monthly_report_df = report.build_monthly_income_and_expense_df()
 
@@ -45,7 +41,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(EnvironmentReader())
 
 
 # Plotting Prototype
