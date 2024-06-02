@@ -4,43 +4,48 @@ from environs import Env
 from report_builder import ReportBuilder
 
 
-env = Env()
-env.read_env()
-DATA_FILE_PATH: str = env.str('DATA_FILE_PATH')
+def main() -> None:
+    env = Env()
+    env.read_env()
+    DATA_FILE_PATH: str = env.str('DATA_FILE_PATH')
 
-# ----- Main Application ---------
-st.set_page_config(page_title="Finance Dashboard",
-                   layout="wide")
+    # ----- Main Application ---------
+    st.set_page_config(page_title="Finance Dashboard",
+                       layout="wide")
 
-report = ReportBuilder(DATA_FILE_PATH, 2024, 4)
+    report = ReportBuilder(DATA_FILE_PATH, 2024, 5)
 
-monthly_report_df = report.build_monthly_income_and_expense_df()
+    monthly_report_df = report.build_monthly_income_and_expense_df()
 
-st.header("Monthly Summary")
-monthly_report_df.T
+    st.header("Monthly Summary")
+    monthly_report_df.T
 
-# Monthly Breakdown
-# TODO: Make Dynamic for any month
-st.header("Monthly Breakdown")
+    # Monthly Breakdown
+    # TODO: Make Dynamic for any month
+    st.header("Monthly Breakdown")
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    with st.expander("Income"):
-        st.write('''
-            Test Income
-        ''')
+    with col1:
+        with st.expander("Income"):
+            st.write('''
+                Test Income
+            ''')
 
-    with st.expander("Savings"):
-        st.write('''
-            Test Savings
-        ''')
+        with st.expander("Savings"):
+            st.write('''
+                Test Savings
+            ''')
 
-with col2:
-    with st.expander("Expenses"):
-        st.write('''
-            Test Expenses
-        ''')
+    with col2:
+        with st.expander("Expenses"):
+            st.write('''
+                Test Expenses
+            ''')
+
+
+if __name__ == "__main__":
+    main()
 
 
 # Plotting Prototype
