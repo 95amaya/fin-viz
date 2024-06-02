@@ -180,13 +180,13 @@ class ReportBuilder:
         self.monthly_report_df = retval
         return self.monthly_report_df
 
+    # Matches labels for current month based on last month's using a fuzzy match
     def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
         df_distinct_text_labels = self.__get_distinct_labels(
             month_index=month_index-1)
         df = self.main_df
 
-        # Get months to compare
         df_curr_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
             df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1))].copy()
 
@@ -208,11 +208,13 @@ class ReportBuilder:
         df_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
             df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1)) & (df[Col.Label.value])].copy()
 
-        # TODO: Update to account for Needs vs. Wants Credit Card Payment
-        df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.Label.value])[
+        df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.AccountType.value, Col.Label.value])[
             [Col.Label.value, Col.Description.value]].to_dict('records')
 
-        # print(df_distinct_text_labels)
+        # Print label, description key value pairs
+        # for item in df_distinct_text_labels:
+        #     print(item)
+
         return df_distinct_text_labels
 
     def __get_closest_fuzzy_match(self, text, df_distinct_text_labels):
