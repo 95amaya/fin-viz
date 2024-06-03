@@ -1,11 +1,14 @@
 from datetime import datetime
 from typing import Any, Hashable
 
-import numpy as np
 from models import Col, Label
 import calendar
+from dataclasses import dataclass
 import pandas as pd
+from pandas.core.groupby import DataFrameGroupBy
 from rapidfuzz import fuzz
+from streamlit.elements.lib.column_config_utils import ColumnConfigMappingInput
+import streamlit as st
 
 
 # ------- Helper Functions -------
@@ -49,30 +52,51 @@ def format_breakdown_pct(total_series: pd.Series, part_series: pd.Series) -> pd.
 
 # ----------------------------------------
 
+@dataclass
+class MonthlyReportBreakdown:
+    income_df: pd.DataFrame
+    income_df_column_config: ColumnConfigMappingInput
+    debit_df: pd.DataFrame
+    debit_df_column_config: ColumnConfigMappingInput
+    credit_needs_df: pd.DataFrame
+    credit_needs_df_column_config: ColumnConfigMappingInput
+    credit_wants_df: pd.DataFrame
+    credit_wants_df_column_config: ColumnConfigMappingInput
+
 
 class ReportBuilder:
+    credit_df_grp: DataFrameGroupBy
     debit_df: pd.DataFrame
     income_per_month_df: pd.DataFrame
     main_df: pd.DataFrame
     monthly_report_df: pd.DataFrame
-    months: np.ndarray[Any, Any]
+    monthly_report_breakdown_df: pd.DataFrame
+    raw_income_df: pd.DataFrame
+    raw_spend_df: pd.DataFrame
     spend_per_month_df: pd.DataFrame
     year: int
 
     def __init__(self, file_path: str, yyyy: int, max_month: int) -> None:
-        self.main_df = get_data_from_csv(file_path)
+        raw_df = get_data_from_csv(file_path)
+        base_filter_qry = (raw_df[Col.Label.value] != 'NOISE')\
+            & (raw_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
+            & (raw_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
+        months = raw_df[Col.TransactionDate.value].dt.month.unique()
+
         self.year = yyyy
-        normalize_qry = (self.main_df[Col.Label.value] != 'NOISE')\
-            & (self.main_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
-            & (self.main_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
-        debit_qry = (self.main_df[Col.TransactionType.value] == 'DEBIT')
-        self.main_df = self.main_df.loc[normalize_qry]
-        self.debit_df = self.main_df.loc[debit_qry]
-        self.months = self.main_df[Col.TransactionDate.value].dt.month.unique()
-        self.months_as_labels = list(map(get_month_name, self.months))
+        self.main_df = raw_df.loc[base_filter_qry]
+        self.debit_df = self.main_df.loc[(
+            self.main_df[Col.TransactionType.value] == 'DEBIT')]
+        self.credit_df_grp = self.main_df.loc[(
+            self.main_df[Col.TransactionType.value] == 'CREDIT')].groupby(by=Col.AccountType.value)
+        self.raw_income_df = self.debit_df.loc[(
+            self.debit_df[Col.Amount.value] > 0)]
+        self.raw_spend_df = self.debit_df.loc[(
+            self.debit_df[Col.Amount.value] < 0)]
+        self.months_as_labels = list(map(get_month_name, months))
 
     def build_monthly_income_summary_df(self) -> pd.DataFrame:
-        income_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] > 0)]
+        income_df = self.raw_income_df
 
         income_per_month_sum = income_df.groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .sum()\
@@ -109,7 +133,7 @@ class ReportBuilder:
         return self.income_per_month_df
 
     def build_monthly_expense_summary_df(self) -> pd.DataFrame:
-        spend_df = self.debit_df.loc[(self.debit_df[Col.Amount.value] < 0)]
+        spend_df = self.raw_spend_df
 
         spend_per_month_1 = spend_df.loc[(spend_df[Col.Label.value] == Label.ExpenseMortgage.value)]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
@@ -180,7 +204,73 @@ class ReportBuilder:
         self.monthly_report_df = retval
         return self.monthly_report_df
 
+    def build_monthly_income_and_expense_breakdown_report(self, month: int) -> MonthlyReportBreakdown:
+        income_df = self.raw_income_df.loc[(self.raw_income_df[Col.TransactionDate.value].dt.month == month)].sort_values(
+            by=[Col.Amount.value, Col.TransactionDate.value], ascending=[False, True])
+
+        income_df_column_config: ColumnConfigMappingInput = {
+            Col.TransactionDate.value: st.column_config.DatetimeColumn(
+                format='YYYY-MM-DD'),
+            Col.TransactionType.value: None
+        }
+
+        # print('------ DEBIT INCOME ------')
+        # print(income_df.head())
+        # print()
+
+        debit_df = self.raw_spend_df.loc[(self.raw_spend_df[Col.TransactionDate.value].dt.month == month)].sort_values(
+            by=Col.Amount.value, ascending=True)
+
+        debit_df_column_config: ColumnConfigMappingInput = {
+            Col.TransactionDate.value: st.column_config.DatetimeColumn(
+                format='YYYY-MM-DD'),
+            Col.TransactionType.value: None
+        }
+
+        # print('------ DEBIT SPEND ------')
+        # print(debit_df.head())
+        # print()
+
+        needs_df = self.credit_df_grp.get_group('NEEDS')
+        credit_needs_df = needs_df.loc[(needs_df[Col.TransactionDate.value].dt.month == month)].sort_values(
+            by=Col.Amount.value, ascending=True)
+
+        credit_needs_df_column_config: ColumnConfigMappingInput = {
+            Col.TransactionDate.value: st.column_config.DatetimeColumn(
+                format='YYYY-MM-DD'),
+            Col.TransactionType.value: None,
+            Col.AccountType.value: None,
+            Col.Label.value: None
+        }
+
+        # print('------ CREDIT NEEDS -------')
+        # print(credit_needs_df.head())
+        # print()
+
+        wants_df = self.credit_df_grp.get_group('WANTS')
+        credit_wants_df = wants_df.loc[(wants_df[Col.TransactionDate.value].dt.month == month)].sort_values(
+            by=Col.Amount.value, ascending=True)
+
+        credit_wants_df_column_config: ColumnConfigMappingInput = {
+            Col.TransactionDate.value: st.column_config.DatetimeColumn(
+                format='YYYY-MM-DD'),
+            Col.TransactionType.value: None,
+            Col.AccountType.value: None,
+            Col.Label.value: None
+        }
+
+        # print('------ CREDIT WANTS -------')
+        # print(credit_wants_df.head())
+        # print()
+
+        return MonthlyReportBreakdown(
+            income_df=income_df, income_df_column_config=income_df_column_config,
+            debit_df=debit_df, debit_df_column_config=debit_df_column_config,
+            credit_needs_df=credit_needs_df, credit_needs_df_column_config=credit_needs_df_column_config,
+            credit_wants_df=credit_wants_df, credit_wants_df_column_config=credit_wants_df_column_config)
+
     # Matches labels for current month based on last month's using a fuzzy match
+
     def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
         df_distinct_text_labels = self.__get_distinct_labels(
