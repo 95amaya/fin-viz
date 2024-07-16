@@ -4,6 +4,7 @@ from typing import Any, Hashable
 from models import Col, Label
 import calendar
 from dataclasses import dataclass
+import numpy as np
 import pandas as pd
 from pandas.core.groupby import DataFrameGroupBy
 from rapidfuzz import fuzz
@@ -81,7 +82,6 @@ class ReportBuilder:
         base_filter_qry = (raw_df[Col.Label.value] != 'NOISE')\
             & (raw_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
             & (raw_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
-        months = raw_df[Col.TransactionDate.value].dt.month.unique()
 
         self.year = yyyy
         self.main_df = raw_df.loc[base_filter_qry]
@@ -93,7 +93,8 @@ class ReportBuilder:
             self.debit_df[Col.Amount.value] > 0)]
         self.raw_spend_df = self.debit_df.loc[(
             self.debit_df[Col.Amount.value] < 0)]
-        self.months_as_labels = list(map(get_month_name, months))
+        self.months_as_labels = list(
+            map(get_month_name, range(1, max_month + 1)))
 
     def build_monthly_income_summary_df(self) -> pd.DataFrame:
         income_df = self.raw_income_df
@@ -111,6 +112,11 @@ class ReportBuilder:
             .groupby(income_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .sum()\
             .values
+        # TODO: Create array pad function to append 0 values to array
+        if (income_per_month_2.size < income_per_month_sum.size):  # type: ignore
+            diff = income_per_month_sum.size - income_per_month_2.size  # type: ignore
+            income_per_month_2 = np.append(
+                income_per_month_2, [0] * diff)  # type: ignore
 
         income_per_month_3 = income_per_month_sum - \
             (income_per_month_1 + income_per_month_2)  # type: ignore

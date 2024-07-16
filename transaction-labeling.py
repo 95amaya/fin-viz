@@ -39,6 +39,8 @@ def main(env: EnvironmentReader) -> None:
     with open(env.DATA_FILE_PATH, 'r') as file:
         read_rows = read_rows + file.readlines()
 
+    print()
+    print("------ FIND MATCHING ROW ------")
     # alter specific rows
     for edited_row in df_fuzzy_match_list:
         print(edited_row)
@@ -50,17 +52,17 @@ def main(env: EnvironmentReader) -> None:
         not_found = True
         while i < len(read_rows) and not_found:
             if read_rows[i].startswith(row_to_match):
-                # print(read_rows[i])
+                print(read_rows[i])
                 read_rows[i] = edited_row + "\n"
                 not_found = False
-                print(read_rows[i])
+                # print(read_rows[i])
             i += 1
 
     # PoC writing to line
     # read_rows[1] = 'FOO\n'
 
     # save altered rows
-    # with open(DATA_FILE_PATH, 'w') as file:
+    # with open(env.DATA_FILE_PATH, 'w') as file:
     #     file.writelines(read_rows)
 
 

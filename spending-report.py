@@ -13,7 +13,7 @@ def main(env: EnvironmentReader) -> None:
 
     monthly_report_df = report.build_monthly_income_and_expense_df()
 
-    st.header("Monthly Summary")
+    st.header("Monthly Summary", divider=True)
     monthly_report_df.T
 
     # Monthly Breakdown
@@ -21,29 +21,23 @@ def main(env: EnvironmentReader) -> None:
     monthly_report_breakdown = report.build_monthly_income_and_expense_breakdown_report(
         env.MAX_MONTH)
 
-    st.header("Monthly Breakdown")
+    st.header("Monthly Breakdown", divider=True)
 
-    col1, col2 = st.columns(2)
+    with st.expander("Income"):
+        st.dataframe(data=monthly_report_breakdown.income_df,
+                     hide_index=True, column_config=monthly_report_breakdown.income_df_column_config)
 
-    with col1:
-        with st.expander("Income"):
-            st.dataframe(data=monthly_report_breakdown.income_df,
-                         hide_index=True, column_config=monthly_report_breakdown.income_df_column_config)
-
-        with st.expander("Savings"):
-            st.write('''
-                Test Savings
-            ''')
-
-    with col2:
-        with st.expander("Expenses"):
-            st.header(body='Debit')
-            st.dataframe(data=monthly_report_breakdown.debit_df,
-                         hide_index=True, column_config=monthly_report_breakdown.debit_df_column_config)
-            st.header(body='Credit Needs')
+    with st.expander("Expenses"):
+        st.subheader(body='Debit')
+        st.dataframe(data=monthly_report_breakdown.debit_df,
+                     hide_index=True, column_config=monthly_report_breakdown.debit_df_column_config)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader(body='Credit Needs')
             st.dataframe(
                 data=monthly_report_breakdown.credit_needs_df, hide_index=True, column_config=monthly_report_breakdown.credit_needs_df_column_config)
-            st.header(body='Credit Wants')
+        with col2:
+            st.subheader(body='Credit Wants')
             st.dataframe(
                 data=monthly_report_breakdown.credit_wants_df, hide_index=True, column_config=monthly_report_breakdown.credit_wants_df_column_config)
 
