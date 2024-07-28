@@ -6,10 +6,16 @@ from pandas.api.types import (
     is_object_dtype,
 )
 from report_builder import get_data_from_csv
-from models import EnvironmentReader
+from models import EnvironmentReader, Col
 
 
 def main(env: EnvironmentReader) -> None:
+    if "count" not in st.session_state:
+        st.session_state.count = 0
+
+    if "amount_sum" not in st.session_state:
+        st.session_state.amount_sum = 0.0
+
     # ----- Main Application ---------
     st.set_page_config(page_title="Finance Dashboard",
                        layout="wide")
@@ -19,8 +25,12 @@ def main(env: EnvironmentReader) -> None:
     raw_df = get_data_from_csv(env.DATA_FILE_PATH)
 
     st.header("Raw Data", divider=True)
-    st.dataframe(filter_dataframe(raw_df),
-                 use_container_width=True, height=700)
+    st.dataframe(filter_dataframe(raw_df), height=700,
+                 use_container_width=True)
+
+    with st.container():
+        st.write(f'Count: {st.session_state.count}')
+        st.write(f'Amount Sum: {round(st.session_state.amount_sum)}')
 
 
 # refer to https://github.com/tylerjrichards/st-filter-dataframe/blob/main/streamlit_app.py
@@ -37,6 +47,7 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     modify = st.checkbox("Add filters")
 
     if not modify:
+        get_df_metrics(df)
         return df
 
     df = df.copy()
@@ -100,10 +111,17 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
                     df = df[df[column].astype(
                         str).str.contains(user_text_input)]
 
+    get_df_metrics(df)
     return df
 
 
+def get_df_metrics(df: pd.DataFrame):
+    st.session_state.count = df.size
+    st.session_state.amount_sum = df[Col.Amount.value].sum()
+
 # refer to https://github.com/BugzTheBunny/streamlit_custom_gui
+
+
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
