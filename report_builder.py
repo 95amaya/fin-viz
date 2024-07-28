@@ -35,7 +35,7 @@ def format_currency(val: Any):
 
 
 def format_percentage(val: Any):
-    if type(val) == float and abs(val) <= 2:
+    if type(val) == float and abs(val) <= 3:
         return "{:.1%}".format(val)
     else:
         return val
