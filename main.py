@@ -11,13 +11,12 @@ def demo_typer(name: str):
 
 @app.command()
 def run_report():
-    # subprocess.run(['streamlit', 'run', './spending-report.py'])
-    subprocess.run(['streamlit', 'run', './spending_report_v2.py'])
+    subprocess.run(['streamlit', 'run', './raw_data_view.py'])
 
 
 @app.command()
 def run_data_label_script():
-    subprocess.run(['streamlit', 'run', './transaction-labeling.py'])
+    subprocess.run(['streamlit', 'run', './scripts/transaction_labeler.py'])
 
 
 if __name__ == "__main__":

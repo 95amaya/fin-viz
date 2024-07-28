@@ -5,8 +5,8 @@ from pandas.api.types import (
     is_numeric_dtype,
     is_object_dtype,
 )
-from report_builder import get_data_from_csv
-from models import EnvironmentReader, Col
+from classes.report_builder import get_data_from_csv
+from classes.models import EnvironmentReader, Col
 
 
 def main(env: EnvironmentReader) -> None:
@@ -22,15 +22,19 @@ def main(env: EnvironmentReader) -> None:
 
     local_css('./css/streamlit.css')
 
+    st.header("Raw Data", divider=True)
+    st.sidebar.header("Raw Data", divider=True)
+
     raw_df = get_data_from_csv(env.DATA_FILE_PATH)
 
-    st.header("Raw Data", divider=True)
     st.dataframe(filter_dataframe(raw_df), height=700,
                  use_container_width=True)
 
-    with st.container():
-        st.write(f'Count: {st.session_state.count}')
-        st.write(f'Amount Sum: {round(st.session_state.amount_sum)}')
+    st.sidebar.write(f'Count: {st.session_state.count}')
+    st.sidebar.write(f'Amount Sum: {round(st.session_state.amount_sum, 2)}')
+
+    st.sidebar.header('Summary', divider=True)
+    st.sidebar.button('Run Summary', type="primary")
 
 
 # refer to https://github.com/tylerjrichards/st-filter-dataframe/blob/main/streamlit_app.py
@@ -44,7 +48,7 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Filtered dataframe
     """
-    modify = st.checkbox("Add filters")
+    modify = st.sidebar.checkbox("Add filters")
 
     if not modify:
         get_df_metrics(df)
@@ -63,7 +67,7 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         if is_datetime64_any_dtype(df[col]):
             df[col] = df[col].dt.tz_localize(None)
 
-    modification_container = st.container()
+    modification_container = st.sidebar.container()
 
     with modification_container:
         to_filter_columns = st.multiselect("Filter dataframe on", df.columns)

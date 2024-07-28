@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Hashable
 
-from models import Col, Label
+from classes.models import Col, Label
 import calendar
 from dataclasses import dataclass
 import numpy as np
