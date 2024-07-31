@@ -3,6 +3,8 @@ import streamlit as st
 from report_builder import ReportBuilder
 from models import EnvironmentReader
 
+# put into fragment to run independently of entire page
+
 
 def main(env: EnvironmentReader) -> None:
     # ----- Main Application ---------
@@ -61,30 +63,3 @@ if __name__ == "__main__":
 
 # summary_chart_df_display = summary_chart_df.T.copy().map(format_currency)
 # summary_chart_df_display
-
-# ----- SIDEBAR -----
-# Wrap this in a function
-# st.sidebar.header("Please Filter Here")
-# account = st.sidebar.multiselect(
-#     "Select Account:",
-#     options=df[Col.AccountType.value].unique(),
-#     default=df[Col.AccountType.value].unique()
-# )
-
-# transaction_type = st.sidebar.multiselect(
-#     "Select Transaction Type:",
-#     options=df[Col.TransactionType.value].unique(),
-#     default=df[Col.TransactionType.value].unique()
-# )
-
-# custom_tags = st.sidebar.multiselect(
-#     "Select Custom Tags:",
-#     options=df[Col.CustomTags.value].explode().unique(),
-#     default=df[Col.CustomTags.value].explode().unique()
-# )
-
-# qry = f'`{Col.AccountType.value}` == @account & `{Col.TransactionType.value}` == @transaction_type & `{Col.CustomTags.value}`.explode() in @custom_tags'
-# # print(qry)
-# df_selected = df.query(qry)
-# st.dataframe(df_selected, use_container_width=True)
-# End function

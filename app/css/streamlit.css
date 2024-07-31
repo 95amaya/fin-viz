@@ -1,0 +1,11 @@
+body {
+    line-height: 1.2rem;
+}
+
+footer {
+    visibility: hidden;
+}
+
+/* div[class^='st-emotion-cache'] {
+    padding: 3rem 3rem;
+} */

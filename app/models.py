@@ -1,5 +1,8 @@
 from enum import Enum
+import json
 from environs import Env
+from streamlit import session_state
+from typing import Any
 
 
 class Col(Enum):
@@ -34,6 +37,19 @@ class EnvironmentReader():
             'CURRENT_YYYY', validate=lambda val: val > 2010 and val < 2050)
         self.MAX_MONTH = self.env.int(
             'MAX_MONTH', validate=lambda val: val >= 1 and val <= 12)
+
+
+class SessionStore():
+    state: Any
+
+    def __init__(self, session_state) -> None:
+        if "count" not in session_state:
+            session_state.count = 0
+
+        if "amount_sum" not in session_state:
+            session_state.amount_sum = 0.0
+
+        self.state = session_state
 
 
 def main() -> None:

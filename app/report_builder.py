@@ -13,13 +13,11 @@ import streamlit as st
 
 
 # ------- Helper Functions -------
-# @st.cache_data
-
-
+@st.cache_data
 def get_data_from_csv(file_path) -> pd.DataFrame:
     df = pd.read_csv(file_path)
     df[Col.TransactionDate.value] = pd.to_datetime(
-        df[Col.TransactionDate.value])
+        df[Col.TransactionDate.value], format='%Y-%m-%d', exact=True)
     return df
 
 
@@ -35,7 +33,7 @@ def format_currency(val: Any):
 
 
 def format_percentage(val: Any):
-    if type(val) == float and abs(val) <= 2:
+    if type(val) == float and abs(val) <= 3:
         return "{:.1%}".format(val)
     else:
         return val
