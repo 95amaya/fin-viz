@@ -1,5 +1,5 @@
-from classes.report_builder import ReportBuilder, Col
-from classes.models import EnvironmentReader
+from report_builder import ReportBuilder
+from models import EnvironmentReader, Col
 
 
 def truncate(val: str) -> str:

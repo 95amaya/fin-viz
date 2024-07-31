@@ -1,7 +1,7 @@
 # import plotly.express as px
 import streamlit as st
-from classes.report_builder import ReportBuilder
-from classes.models import EnvironmentReader
+from report_builder import ReportBuilder
+from models import EnvironmentReader
 
 # put into fragment to run independently of entire page
 

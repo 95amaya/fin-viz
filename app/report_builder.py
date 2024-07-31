@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Hashable
 
-from classes.models import Col, Label
+from models import Col, Label
 import calendar
 from dataclasses import dataclass
 import numpy as np
@@ -13,13 +13,11 @@ import streamlit as st
 
 
 # ------- Helper Functions -------
-# @st.cache_data
-
-
+@st.cache_data
 def get_data_from_csv(file_path) -> pd.DataFrame:
     df = pd.read_csv(file_path)
     df[Col.TransactionDate.value] = pd.to_datetime(
-        df[Col.TransactionDate.value])
+        df[Col.TransactionDate.value], format='%Y-%m-%d', exact=True)
     return df
 
 
