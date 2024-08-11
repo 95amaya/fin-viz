@@ -8,6 +8,22 @@ from models import Col, SessionStore
 from typing import Any
 
 
+def render_raw_data(session: SessionStore, raw_df: pd.DataFrame) -> None:
+    df = raw_df.copy()
+
+    st.header("Raw Data", divider=True)
+    _render_sidebar(df, session)
+
+    st.dataframe(_filter_dataframe(df, session), height=700, use_container_width=True, column_config={
+        Col.TransactionDate.value: st.column_config.DatetimeColumn(
+            format='YYYY-MM-DD')
+    })
+
+    st.sidebar.write(f'Count: {session.state.count}')
+    st.sidebar.write(
+        f'Amount Sum: {round(session.state.amount_sum, 2)}')
+
+
 def _render_sidebar(df: pd.DataFrame, session: SessionStore) -> None:
     # print('render sidebar!')
     st.sidebar.header("Raw Data", divider=True)
@@ -57,27 +73,8 @@ def _render_sidebar(df: pd.DataFrame, session: SessionStore) -> None:
                     )
 
 
-def render_raw_data(session: SessionStore, raw_df: pd.DataFrame) -> None:
-    df = raw_df.copy()
-
-    st.header("Raw Data", divider=True)
-    _render_sidebar(df, session)
-
-    st.dataframe(_filter_dataframe(df, session), height=700, use_container_width=True, column_config={
-        Col.TransactionDate.value: st.column_config.DatetimeColumn(
-            format='YYYY-MM-DD')
-    })
-
-    st.sidebar.write(f'Count: {session.state.count}')
-    st.sidebar.write(
-        f'Amount Sum: {round(session.state.amount_sum, 2)}')
-
-
-# refer to https://github.com/tylerjrichards/st-filter-dataframe/blob/main/streamlit_app.py
-
-
 def _filter_dataframe(df: pd.DataFrame, session: SessionStore) -> pd.DataFrame:
-
+    # refer to https://github.com/tylerjrichards/st-filter-dataframe/blob/main/streamlit_app.py
     if not session.state.enable_raw_data_filters:
         _set_df_metrics(df, session)
         return df

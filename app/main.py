@@ -2,6 +2,7 @@ import streamlit as st
 from models import EnvironmentReader, SessionStore
 from report_builder import get_data_from_csv
 from view_raw_data import render_raw_data
+from view_financial_summary import render_financial_summary
 
 # refer to https://github.com/BugzTheBunny/streamlit_custom_gui
 
@@ -26,7 +27,8 @@ def main(env: EnvironmentReader, session: SessionStore) -> None:
     st.write(st.session_state)
 
     st.sidebar.header('Summary', divider=True)
-    st.sidebar.button('Run Summary', type="primary")
+    if st.sidebar.button('Run Summary', type="primary"):
+        render_financial_summary(env)
 
 
 if __name__ == "__main__":
