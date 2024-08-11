@@ -1,5 +1,5 @@
-from report_builder import ReportBuilder
 from models import EnvironmentReader, Col
+from report_builder import ReportBuilder
 
 
 def truncate(val: str) -> str:
@@ -7,6 +7,7 @@ def truncate(val: str) -> str:
 
 
 def main(env: EnvironmentReader) -> None:
+    print(f"MAX MONTH: {env.MAX_MONTH}")
     report = ReportBuilder(env.DATA_FILE_PATH, env.CURRENT_YYYY, env.MAX_MONTH)
     df_fuzzy_match = report.get_fuzzy_matched_rows(env.MAX_MONTH)
 
@@ -62,8 +63,9 @@ def main(env: EnvironmentReader) -> None:
     # read_rows[1] = 'FOO\n'
 
     # save altered rows
-    # with open(env.DATA_FILE_PATH, 'w') as file:
-    #     file.writelines(read_rows)
+    with open(env.DATA_FILE_PATH, 'w') as file:
+        print(f"Writing to: {env.DATA_FILE_PATH}")
+        file.writelines(read_rows)
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ def run_app():
 
 @app.command()
 def run_data_label_script():
-    subprocess.run(['python', './scripts/transaction_labeler.py'])
+    subprocess.run(['python', './app/script_transaction_labeler.py'])
 
 
 if __name__ == "__main__":

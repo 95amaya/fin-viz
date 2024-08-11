@@ -3,10 +3,8 @@ import pandas as pd
 from pandas.api.types import (
     is_datetime64_any_dtype,
     is_numeric_dtype,
-    is_object_dtype,
 )
-from report_builder import get_data_from_csv
-from models import EnvironmentReader, Col, SessionStore
+from models import Col, SessionStore
 from typing import Any
 
 
@@ -65,8 +63,10 @@ def render_raw_data(session: SessionStore, raw_df: pd.DataFrame) -> None:
     st.header("Raw Data", divider=True)
     _render_sidebar(df, session)
 
-    st.dataframe(_filter_dataframe(df, session), height=700,
-                 use_container_width=True)
+    st.dataframe(_filter_dataframe(df, session), height=700, use_container_width=True, column_config={
+        Col.TransactionDate.value: st.column_config.DatetimeColumn(
+            format='YYYY-MM-DD')
+    })
 
     st.sidebar.write(f'Count: {session.state.count}')
     st.sidebar.write(
@@ -115,6 +115,6 @@ def _filter_dataframe(df: pd.DataFrame, session: SessionStore) -> pd.DataFrame:
 
 
 def _set_df_metrics(df: pd.DataFrame, session: SessionStore) -> None:
-    print('set df metrics called')
+    # print('set df metrics called')
     session.state.count = df.size
     session.state.amount_sum = df[Col.Amount.value].sum()
