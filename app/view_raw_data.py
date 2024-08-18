@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 import pandas as pd
 from pandas.api.types import (
     is_datetime64_any_dtype,
@@ -8,29 +9,15 @@ from models import Col, SessionStore
 from typing import Any
 
 
-def render_raw_data(session: SessionStore, raw_df: pd.DataFrame) -> None:
-    df = raw_df.copy()
-
-    st.header("Raw Data", divider=True)
-    _render_sidebar(df, session)
-
-    st.dataframe(_filter_dataframe(df, session), height=700, use_container_width=True, column_config={
-        Col.TransactionDate.value: st.column_config.DatetimeColumn(
-            format='YYYY-MM-DD')
-    })
-
-    st.sidebar.write(f'Count: {session.state.count}')
-    st.sidebar.write(
-        f'Amount Sum: {round(session.state.amount_sum, 2)}')
-
-
-def _render_sidebar(df: pd.DataFrame, session: SessionStore) -> None:
-    # print('render sidebar!')
-    st.sidebar.header("Raw Data", divider=True)
-    st.sidebar.checkbox("Add filters", key='enable_raw_data_filters')
+@st.fragment
+def render_raw_data_filters(session: SessionStore, app_container: DeltaGenerator) -> None:
+    print('run raw data filters fragment')
+    new_app_container = app_container.container()
+    st.checkbox("Add filters", key='enable_raw_data_filters')
+    df = session.state.raw_df
 
     if session.state.enable_raw_data_filters:
-        col_filter_container = st.sidebar.container()
+        col_filter_container = st.container()
         with col_filter_container:
             to_filter_columns = st.multiselect(
                 "Filter dataframe on", df.columns, key='column_options')
@@ -72,6 +59,19 @@ def _render_sidebar(df: pd.DataFrame, session: SessionStore) -> None:
                         key=f"user_input_text|{column}"
                     )
 
+    with new_app_container:
+        print('render raw data')
+        st.header('Raw Data', divider=True)
+        df = session.state.raw_df.copy()
+
+        st.dataframe(_filter_dataframe(df, session), height=700, use_container_width=True, column_config={
+            Col.TransactionDate.value: st.column_config.DatetimeColumn(
+                format='YYYY-MM-DD')
+        })
+
+    st.write(f'Count: {session.state.count}')
+    st.write(f'Amount Sum: {round(session.state.amount_sum, 2)}')
+
 
 def _filter_dataframe(df: pd.DataFrame, session: SessionStore) -> pd.DataFrame:
     # refer to https://github.com/tylerjrichards/st-filter-dataframe/blob/main/streamlit_app.py
@@ -112,6 +112,6 @@ def _filter_dataframe(df: pd.DataFrame, session: SessionStore) -> pd.DataFrame:
 
 
 def _set_df_metrics(df: pd.DataFrame, session: SessionStore) -> None:
-    # print('set df metrics called')
-    session.state.count = df.size
+    # print(f'set df metrics called')
+    session.state.count = len(df)
     session.state.amount_sum = df[Col.Amount.value].sum()

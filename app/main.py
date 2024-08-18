@@ -1,10 +1,8 @@
 import streamlit as st
 from models import EnvironmentReader, SessionStore
 from report_builder import get_data_from_csv
-from view_raw_data import render_raw_data
+from view_raw_data import render_raw_data_filters
 from view_financial_summary import render_financial_summary
-
-# refer to https://github.com/BugzTheBunny/streamlit_custom_gui
 
 
 def _local_css(file_name):
@@ -13,6 +11,7 @@ def _local_css(file_name):
 
 
 def _startup() -> None:
+    # refer to https://github.com/BugzTheBunny/streamlit_custom_gui
     # local_css('./css/streamlit.css')
 
     st.set_page_config(page_title="Finance Dashboard",
@@ -22,13 +21,18 @@ def _startup() -> None:
 def main(env: EnvironmentReader, session: SessionStore) -> None:
     print('Run')
     _startup()
-    raw_df = get_data_from_csv(env.DATA_FILE_PATH)
-    render_raw_data(session, raw_df)
-    st.write(st.session_state)
+    app_container = st.container()
+    session.state.raw_df = get_data_from_csv(env.DATA_FILE_PATH)
 
-    st.sidebar.header('Summary', divider=True)
-    if st.sidebar.button('Run Summary', type="primary"):
-        render_financial_summary(env)
+    # st.sidebar.header('Summary', divider=True)
+    # if st.sidebar.button('Run Summary', type="primary"):
+    #     render_financial_summary(env, raw_df)
+
+    st.sidebar.header("Raw Data", divider=True)
+    with st.sidebar:
+        render_raw_data_filters(session, app_container.empty())
+
+    st.sidebar.write(st.session_state)
 
 
 if __name__ == "__main__":

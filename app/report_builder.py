@@ -75,8 +75,7 @@ class ReportBuilder:
     spend_per_month_df: pd.DataFrame
     year: int
 
-    def __init__(self, file_path: str, yyyy: int, max_month: int) -> None:
-        raw_df = get_data_from_csv(file_path)
+    def __init__(self, raw_df: pd.DataFrame, yyyy: int, max_month: int) -> None:
         base_filter_qry = (raw_df[Col.Label.value] != 'NOISE')\
             & (raw_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
             & (raw_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
@@ -85,8 +84,6 @@ class ReportBuilder:
         self.main_df = raw_df.loc[base_filter_qry]
         self.debit_df = self.main_df.loc[(
             self.main_df[Col.TransactionType.value] == 'DEBIT')]
-        self.credit_df_grp = self.main_df.loc[(
-            self.main_df[Col.TransactionType.value] == 'CREDIT')].groupby(by=Col.AccountType.value)
         self.raw_income_df = self.debit_df.loc[(
             self.debit_df[Col.Amount.value] > 0)]
         self.raw_spend_df = self.debit_df.loc[(

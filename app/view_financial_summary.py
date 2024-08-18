@@ -1,16 +1,23 @@
 # import plotly.express as px
 import streamlit as st
+import pandas as pd
 from report_builder import ReportBuilder
 from models import EnvironmentReader
 
 # put into fragment to run independently of entire page
 
 
-def render_financial_summary(env: EnvironmentReader) -> None:
+def render_financial_summary(env: EnvironmentReader, raw_df: pd.DataFrame) -> None:
 
-    report = ReportBuilder(env.DATA_FILE_PATH, env.CURRENT_YYYY, env.MAX_MONTH)
+    report = ReportBuilder(raw_df, env.CURRENT_YYYY, env.MAX_MONTH)
 
     monthly_report_df = report.build_monthly_income_and_expense_df()
+
+    st.header("Income Summary", divider=True)
+    st.dataframe(report.income_per_month_df.T)
+
+    st.header("Spend Summary", divider=True)
+    st.dataframe(report.spend_per_month_df.T)
 
     st.header("Monthly Summary", divider=True)
     st.dataframe(monthly_report_df.T)
