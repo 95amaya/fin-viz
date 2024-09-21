@@ -20,6 +20,8 @@ class Label(Enum):
     ExpenseMortgage = "Mortgage Payment"
     ExpenseNeeds = "Need's Payment"
     ExpenseWants = "Want's Payment"
+    SavingsShortTerm = "Short-Term Savings"
+    SavingsRetirement = "Retirement Savings"
 
 
 class EnvironmentReader():

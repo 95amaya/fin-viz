@@ -44,7 +44,7 @@ def format_breakdown_pct(total_series: pd.Series, part_series: pd.Series) -> pd.
     part_series_display = part_series.copy().map(format_currency)
     # print(pct_series_display)
     # print(part_series_display)
-    ret_val = part_series_display + " (" + pct_series_display + ")"
+    ret_val = part_series_display  # + " (" + pct_series_display + ")"
     # print(ret_val)
     return ret_val
 
@@ -135,13 +135,16 @@ class ReportBuilder:
 
     def build_monthly_expense_summary_df(self) -> pd.DataFrame:
         spend_df = self.raw_spend_df
+        label_filter = [Label.ExpenseMortgage.value,
+                        Label.SavingsRetirement.value, Label.SavingsShortTerm.value]
 
         spend_per_month_1 = spend_df.loc[(spend_df[Col.Label.value] == Label.ExpenseMortgage.value)]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values
 
-        spend_per_month_2 = spend_df.loc[(spend_df[Col.AccountType.value] == 'NEEDS') & (spend_df[Col.Label.value] != Label.ExpenseMortgage.value)]\
+        # TODO check this summary function for accuracy
+        spend_per_month_2 = spend_df.loc[(spend_df[Col.AccountType.value] == 'NEEDS') & (~spend_df[Col.Label.value].isin(label_filter))]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
             .values

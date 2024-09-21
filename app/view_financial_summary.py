@@ -19,6 +19,12 @@ def render_financial_summary(env: EnvironmentReader, raw_df: pd.DataFrame) -> No
     st.header("Spend Summary", divider=True)
     st.dataframe(report.spend_per_month_df.T)
 
+    # TODO Build pie chart of monthly spending
+    # TODO Make % optional (compare to running avg. YTD, 3mo, 6mo)
+    # TODO Use avg. spending AND median spending
+    # TODO Insert Tabs
+    # TODO Breakdown credit spending
+    # TODO Add basic filters
     st.header("Monthly Summary", divider=True)
     st.dataframe(monthly_report_df.T)
 

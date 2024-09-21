@@ -24,9 +24,9 @@ def main(env: EnvironmentReader, session: SessionStore) -> None:
     app_container = st.container()
     session.state.raw_df = get_data_from_csv(env.DATA_FILE_PATH)
 
-    # st.sidebar.header('Summary', divider=True)
-    # if st.sidebar.button('Run Summary', type="primary"):
-    #     render_financial_summary(env, raw_df)
+    st.sidebar.header('Summary', divider=True)
+    if st.sidebar.button('Run Summary', type="primary"):
+        render_financial_summary(env, session.state.raw_df)
 
     st.sidebar.header("Raw Data", divider=True)
     with st.sidebar:

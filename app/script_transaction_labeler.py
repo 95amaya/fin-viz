@@ -1,5 +1,5 @@
 from models import EnvironmentReader, Col
-from report_builder import ReportBuilder
+from report_builder import ReportBuilder, get_data_from_csv, get_month_name
 
 
 def truncate(val: str) -> str:
@@ -7,8 +7,10 @@ def truncate(val: str) -> str:
 
 
 def main(env: EnvironmentReader) -> None:
-    print(f"MAX MONTH: {env.MAX_MONTH}")
-    report = ReportBuilder(env.DATA_FILE_PATH, env.CURRENT_YYYY, env.MAX_MONTH)
+    print(f"MAX MONTH: {get_month_name(env.MAX_MONTH)}")
+    # run get_data_from_csv
+    report = ReportBuilder(get_data_from_csv(
+        env.DATA_FILE_PATH), env.CURRENT_YYYY, env.MAX_MONTH)
     df_fuzzy_match = report.get_fuzzy_matched_rows(env.MAX_MONTH)
 
     formatters = {
