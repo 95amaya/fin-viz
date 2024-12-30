@@ -1,3 +1,4 @@
+from datetime import datetime
 from models import EnvironmentReader, Col
 from report_builder import ReportBuilder, get_data_from_csv, get_month_name
 
@@ -7,11 +8,12 @@ def truncate(val: str) -> str:
 
 
 def main(env: EnvironmentReader) -> None:
-    print(f"MAX MONTH: {get_month_name(env.MAX_MONTH)}")
+    max_date = datetime(env.CURRENT_YYYY, env.MAX_MONTH, 1)
+
     # run get_data_from_csv
     report = ReportBuilder(get_data_from_csv(
-        env.DATA_FILE_PATH), env.CURRENT_YYYY, env.MAX_MONTH)
-    df_fuzzy_match = report.get_fuzzy_matched_rows(env.MAX_MONTH)
+        env.DATA_FILE_PATH), max_date)
+    df_fuzzy_match = report.get_fuzzy_matched_rows()
 
     formatters = {
         Col.TransactionDate.value: "{0:%Y-%m-%d},|&".format,

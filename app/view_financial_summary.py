@@ -1,4 +1,5 @@
 # import plotly.express as px
+from datetime import datetime
 import streamlit as st
 import pandas as pd
 from report_builder import ReportBuilder
@@ -8,8 +9,8 @@ from models import EnvironmentReader
 
 
 def render_financial_summary(env: EnvironmentReader, raw_df: pd.DataFrame) -> None:
-
-    report = ReportBuilder(raw_df, env.CURRENT_YYYY, env.MAX_MONTH)
+    max_date = datetime(env.CURRENT_YYYY, env.MAX_MONTH, 1)
+    report = ReportBuilder(raw_df, max_date)
 
     monthly_report_df = report.build_monthly_income_and_expense_df()
 

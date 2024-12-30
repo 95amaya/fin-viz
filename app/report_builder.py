@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import Any, Hashable
 
 from models import Col, Label
@@ -68,19 +69,21 @@ class ReportBuilder:
     debit_df: pd.DataFrame
     income_per_month_df: pd.DataFrame
     main_df: pd.DataFrame
+    max_date: datetime
     monthly_report_df: pd.DataFrame
     monthly_report_breakdown_df: pd.DataFrame
+    next_month: datetime
     raw_income_df: pd.DataFrame
     raw_spend_df: pd.DataFrame
     spend_per_month_df: pd.DataFrame
-    year: int
 
-    def __init__(self, raw_df: pd.DataFrame, yyyy: int, max_month: int) -> None:
+    def __init__(self, raw_df: pd.DataFrame, max_date: datetime) -> None:
+        self.next_month = max_date + relativedelta(months=1)
         base_filter_qry = (raw_df[Col.Label.value] != 'NOISE')\
-            & (raw_df[Col.TransactionDate.value] >= datetime(yyyy, 1, 1))\
-            & (raw_df[Col.TransactionDate.value] < datetime(yyyy, max_month + 1, 1))
+            & (raw_df[Col.TransactionDate.value] >= datetime(max_date.year, 1, 1))\
+            & (raw_df[Col.TransactionDate.value] < self.next_month)
 
-        self.year = yyyy
+        self.max_date = max_date
         self.main_df = raw_df.loc[base_filter_qry]
         self.debit_df = self.main_df.loc[(
             self.main_df[Col.TransactionType.value] == 'DEBIT')]
@@ -89,7 +92,9 @@ class ReportBuilder:
         self.raw_spend_df = self.debit_df.loc[(
             self.debit_df[Col.Amount.value] < 0)]
         self.months_as_labels = list(
-            map(get_month_name, range(1, max_month + 1)))
+            map(get_month_name, range(1, self.next_month.month if self.next_month.month > 1 else 12)))
+
+        print(f"MAX DATE {self.max_date}, NEXT MONTH: {self.next_month}")
 
     def build_monthly_income_summary_df(self) -> pd.DataFrame:
         income_df = self.raw_income_df
@@ -210,14 +215,25 @@ class ReportBuilder:
 
     # Matches labels for current month based on last month's using a fuzzy match
 
-    def get_fuzzy_matched_rows(self, month_index: int) -> pd.DataFrame:
+    def get_fuzzy_matched_rows(self) -> pd.DataFrame:
         col_fuzzy_match = 'fuzzy_match'
-        df_distinct_text_labels = self.__get_distinct_labels(
-            month_index=month_index-1)
         df = self.main_df
+        prev_month = self.max_date - relativedelta(months=1)
 
-        df_curr_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
-            df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1))].copy()
+        # get distinct labels from previous month
+        df_month = df.loc[(df[Col.TransactionDate.value] >= prev_month) & (
+            df[Col.TransactionDate.value] < self.max_date) & (df[Col.Label.value])].copy()
+
+        df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.AccountType.value, Col.Label.value])[
+            [Col.Label.value, Col.Description.value]].to_dict('records')
+
+        # Print label, description key value pairs
+        # for item in df_distinct_text_labels:
+        #     print(item)
+
+        # Perform Fuzzy Match
+        df_curr_month = df.loc[(df[Col.TransactionDate.value] >= self.max_date) & (
+            df[Col.TransactionDate.value] < self.next_month)].copy()
 
         df_curr_month[col_fuzzy_match] = df_curr_month[Col.Description.value].apply(
             lambda descr: self.__get_closest_fuzzy_match(descr, df_distinct_text_labels))
@@ -230,21 +246,6 @@ class ReportBuilder:
 
         # print(df_curr_month)
         return df_curr_month
-
-    def __get_distinct_labels(self, month_index: int) -> list[dict[Hashable, Any]]:
-        df = self.main_df
-
-        df_month = df.loc[(df[Col.TransactionDate.value] >= datetime(self.year, month_index, 1)) & (
-            df[Col.TransactionDate.value] < datetime(self.year, month_index + 1, 1)) & (df[Col.Label.value])].copy()
-
-        df_distinct_text_labels = df_month.drop_duplicates(subset=[Col.AccountType.value, Col.Label.value])[
-            [Col.Label.value, Col.Description.value]].to_dict('records')
-
-        # Print label, description key value pairs
-        # for item in df_distinct_text_labels:
-        #     print(item)
-
-        return df_distinct_text_labels
 
     def __get_closest_fuzzy_match(self, text, df_distinct_text_labels):
         # print(text)
