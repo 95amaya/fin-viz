@@ -32,7 +32,7 @@ def main(env: EnvironmentReader, session: SessionStore) -> None:
     with st.sidebar:
         render_raw_data_filters(session, app_container.empty())
 
-    st.sidebar.write(st.session_state)
+    # st.sidebar.write(st.session_state)
 
 
 if __name__ == "__main__":

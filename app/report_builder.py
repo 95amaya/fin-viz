@@ -148,7 +148,6 @@ class ReportBuilder:
             .apply(lambda val: val.abs().sum())\
             .values
 
-        # TODO check this summary function for accuracy
         spend_per_month_2 = spend_df.loc[(spend_df[Col.AccountType.value] == 'NEEDS') & (~spend_df[Col.Label.value].isin(label_filter))]\
             .groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
             .apply(lambda val: val.abs().sum())\
@@ -159,9 +158,10 @@ class ReportBuilder:
             .apply(lambda val: val.abs().sum())\
             .values
 
-        spend_per_month_sum = spend_df.groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
-            .apply(lambda val: val.abs().sum())\
-            .values
+        spend_per_month_sum = spend_per_month_1 + spend_per_month_2 + spend_per_month_3
+        # spend_df.groupby(spend_df[Col.TransactionDate.value].dt.month)[Col.Amount.value]\
+        #     .apply(lambda val: val.abs().sum())\
+        #     .values
 
         retval = pd.DataFrame(
             data={

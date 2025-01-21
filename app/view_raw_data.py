@@ -1,3 +1,4 @@
+import math
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 import pandas as pd
@@ -33,9 +34,9 @@ def render_raw_data_filters(session: SessionStore, app_container: DeltaGenerator
                         key=f"user_input_cat|{column}"
                     )
                 elif is_numeric_dtype(df[column]):
-                    _min = float(df[column].min())
-                    _max = float(df[column].max())
-                    step = (_max - _min) / 100
+                    _min = float(_roundup(df[column].min()))
+                    _max = float(_roundup(df[column].max()))
+                    step = 100.0  # (_max - _min) / 100
                     right.slider(
                         f"Values for {column}",
                         min_value=_min,
@@ -115,3 +116,7 @@ def _set_df_metrics(df: pd.DataFrame, session: SessionStore) -> None:
     # print(f'set df metrics called')
     session.state.count = len(df)
     session.state.amount_sum = df[Col.Amount.value].sum()
+
+
+def _roundup(num: int) -> int:
+    return int(math.ceil(num / 100.0)) * 100
